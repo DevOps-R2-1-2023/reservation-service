@@ -1,0 +1,69 @@
+name: "reservation-service Pull Request Workflow"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'pom.xml'
+
+jobs:
+  tests:
+    name: "Tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: '~/.m2/repository'
+          key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-maven-test-
+
+      - name: Grant execute permission for Maven wrapper
+        run: chmod +x mvnw
+
+      - name: Run unit tests
+        run: ./mvnw test
+
+      - name: Run integration tests
+        run: ./mvnw verify
+
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: '~/.m2/repository'
+          key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-
+
+      - name: Grant execute permission for Maven wrapper
+        run: chmod +x mvnw
+
+      - name: Build with Maven
+        run: ./mvnw clean install -Dspring.profiles.active=test
